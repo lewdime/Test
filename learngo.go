@@ -2,36 +2,28 @@ package main
 
 import (
 	"fmt"
-	"sort"
+	"time"
 )
 
-type Programmer struct {
-	Age int
-}
-
-type byAge []Programmer
-
-func (p byAge) Len() int {
-	return len(p)
-}
-
-func (p byAge) Swap(i, j int) {
-	p[i], p[j] = p[j], p[i]
-}
-
-func (p byAge) Less(i, j int) bool {
-	return p[i].Age < p[j].Age
+func backgroundTask() {
+	ticker := time.NewTicker(1 * time.Second)
+	for _ = range ticker.C {
+		fmt.Println("Tock")
+	}
 }
 
 func main() {
-	programmers := []Programmer{
-		Programmer{Age: 30},
-		Programmer{Age: 20},
-		Programmer{Age: 50},
-		Programmer{Age: 1000},
-	}
+	fmt.Println("Go Tickers Tutorial")
 
-	sort.Sort(byAge(programmers))
+	go backgroundTask()
 
-	fmt.Println(programmers)
+	// This print statement will be executed before
+	// the first `tock` prints in the console
+	fmt.Println("The rest of my application can continue")
+	// here we use an empty select{} in order to keep
+	// our main function alive indefinitely as it would
+	// complete before our backgroundTask has a chance
+	// to execute if we didn't.
+	select {}
+
 }

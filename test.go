@@ -104,7 +104,7 @@ func reverse(x int) {
 
 	fmt.Println("done")
 }
-
+	
 func main() {
 	defer fmt.Println("world")
 
@@ -134,9 +134,7 @@ func main() {
 	fmt.Println(j) // see the new value of j
 }
 
-*/
 
-/*
 
 package main
 
@@ -154,11 +152,9 @@ func main() {
 	fmt.Println(v)
 }
 
-*/
 
-/*
 
-package main
+package main // Struct
 
 import "fmt"
 
@@ -177,11 +173,11 @@ func main() {
 	fmt.Println(v1, p, v2, v3)
 }
 
-*/
 
-/*
 
-package main
+
+
+package main // Arrays
 
 import "fmt"
 
@@ -196,9 +192,8 @@ func main() {
 	fmt.Println(primes)
 }
 
-*/
 
-/*
+
 
 package main // Slices
 
@@ -533,7 +528,7 @@ func main() {
 }
 
 
-package main  // Sorting With the Sort Package
+package main  // Sorting With Sort Package
 
 import (
 	"fmt"
@@ -570,3 +565,191 @@ func main() {
 
 	fmt.Println(programmers)
 }
+
+
+
+
+package main // Using Lock and Unlock Methon in sync.Mutex
+
+import (
+	"fmt"
+	"sync"
+)
+
+type safeCounter struct {
+	i int
+	sync.Mutex
+}
+
+func main() {
+
+	sc := new(safeCounter)
+
+	for i := 0; i < 100; i++ {
+		go sc.Increment()
+		go sc.Decrement()
+	}
+
+	fmt.Println(sc.GetValue())
+}
+
+func (sc *safeCounter) Increment() {
+	sc.Lock()
+	sc.i++
+	sc.Unlock()
+}
+
+func (sc *safeCounter) Decrement() {
+	sc.Lock()
+	sc.i--
+	sc.Unlock()
+}
+
+func (sc *safeCounter) GetValue() int {
+	sc.Lock()
+	v := sc.i
+	sc.Unlock()
+	return v
+}
+
+
+
+
+package main  // Using Once methon in the Sync Package
+
+import (
+	"fmt"
+	"sync"
+)
+
+func main() {
+	var once sync.Once
+	onceBody := func() {
+		fmt.Println("Only once")
+	}
+	done := make(chan bool)
+	for i := 0; i < 10; i++ {
+		go func() {
+			once.Do(onceBody)
+			done <- true
+		}()
+	}
+
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+}
+
+
+
+
+package main // Multiple Read and a Write using sync.RWMutex
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+)
+
+type MapCounter struct {
+	m map[int]int
+	sync.RWMutex
+}
+
+func main() {
+	mc := MapCounter{m: make(map[int]int)}
+
+	// Referencing to the address of mc by & as the parameter of the func 
+	// is using a pointer * to get the value of the same object
+	go runWriters(&mc, 10)
+
+	// Running two instances of go routine running as the same time
+	go runReaders(&mc, 10)
+	go runReaders(&mc, 10)
+	time.Sleep(15 * time.Second)
+}
+
+// Creating the functions that will be used in the main function
+func runWriters(mc *MapCounter, n int) {
+	for i := 0; i < n; i++ {
+		mc.Lock()
+		mc.m[i] = i * 10
+		mc.Unlock()
+		time.Sleep(1 * time.Second)
+	}
+}
+
+func runReaders(mc *MapCounter, n int) {
+	for {
+		mc.RLock()
+		//randomly choosing an item in the map  counter
+		v := mc.m[rand.Intn(n)]
+		mc.RUnlock()
+		fmt.Println(v)
+		time.Sleep(1 * time.Second)
+	}
+}
+
+
+
+package main  // Using Wait Group method of sync
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+)
+
+func main() {
+	var wg sync.WaitGroup
+	for i := 0; i <= 5; i++ {
+
+		// Incrementing the WaitGroup counter
+		wg.Add(1)
+
+		// Launch a go routine
+		go func(i int) {
+			// Decrement the counter when the goroutine completes.
+			defer wg.Done()
+			// Do some work
+			time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
+			fmt.Println("Work done for ", i)
+
+		}(i)
+	}
+
+	wg.Wait()
+}
+
+
+
+package main	//  Ticker method using time package
+
+import (
+	"fmt"
+	"time"
+)
+
+func backgroundTask() {
+	ticker := time.NewTicker(1 * time.Second)
+	for _ = range ticker.C {
+		fmt.Println("Tock")
+	}
+}
+
+func main() {
+	fmt.Println("Go Tickers Tutorial")
+
+	go backgroundTask()
+}
+
+	// This print statement will be executed before
+	// the first `tock` prints in the console
+	fmt.Println("The rest of my application can continue")
+	// here we use an empty select{} in order to keep
+	// our main function alive indefinitely as it would
+	// complete before our backgroundTask has a chance
+	// to execute if we didn't.
+	select {}
