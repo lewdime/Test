@@ -1,4 +1,4 @@
-/* 
+/*
 
 package main
 
@@ -65,9 +65,9 @@ func main() {
 	}
 }
 
-*/
 
-/*
+
+
 
 package main
 
@@ -104,7 +104,7 @@ func reverse(x int) {
 
 	fmt.Println("done")
 }
-	
+
 func main() {
 	defer fmt.Println("world")
 
@@ -289,7 +289,7 @@ func main() {
 
 
 
-package main 
+package main
 
 import (
 	"fmt"
@@ -536,8 +536,8 @@ import (
 )
 
 type Programmer struct {
-	Age int 
-} 
+	Age int
+}
 
 type byAge []Programmer
 
@@ -547,7 +547,7 @@ func (p byAge) Len() int {
 
 func (p byAge) Swap(i, j int) {
 	p[i], p[j] = p[j], p[i]
-} 
+}
 
 func (p byAge) Less(i, j int) bool {
 	return p[i].Age < p[j].Age
@@ -660,7 +660,7 @@ type MapCounter struct {
 func main() {
 	mc := MapCounter{m: make(map[int]int)}
 
-	// Referencing to the address of mc by & as the parameter of the func 
+	// Referencing to the address of mc by & as the parameter of the func
 	// is using a pointer * to get the value of the same object
 	go runWriters(&mc, 10)
 
@@ -753,3 +753,6 @@ func main() {
 	// complete before our backgroundTask has a chance
 	// to execute if we didn't.
 	select {}
+
+
+*/
