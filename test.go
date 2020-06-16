@@ -804,4 +804,92 @@ func main() {
 }
 
 
-*/
+
+
+package main	// Go Routines
+
+import (
+	"fmt"
+	"time"
+)
+
+// a very simple function that we'll
+// make asynchronous later on
+func compute(value int) {
+	for i := 0; i < value; i++ {
+		time.Sleep(time.Second)
+		fmt.Println(i)
+	}
+}
+
+func main() {
+	fmt.Println("Goroutine Tutorial")
+
+	// notice how we've added the 'go' keyword
+	// in front of both our compute function calls
+	go compute(10)
+	go compute(10)
+
+	// we can make our anonymous function concurrent using go as below
+	// go func() {
+	//	fmt.Println("Executing my Concurrent anonymous function")
+	// }()
+
+	// we scan fmt for input and print that to our console
+	// this is so that our program waits for keyboard imput
+	// before it kills our poor go routines
+	var input string
+	fmt.Scanln(&input)
+
+}
+
+
+
+package main	// Go Routines with Waitgroup
+
+import (
+    "fmt"
+    "log"
+    "net/http"
+    "sync"
+)
+
+var urls = []string{
+    "https://google.com",
+    "https://tutorialedge.net",
+    "https://twitter.com",
+}
+
+func fetch(url string, wg *sync.WaitGroup) (string, error) {
+    resp, err := http.Get(url)
+    if err != nil {
+        fmt.Println(err)
+        return "", err
+    }
+    wg.Done()
+    fmt.Println(resp.Status)
+    return resp.Status, nil
+}
+
+func homePage(w http.ResponseWriter, r *http.Request) {
+    fmt.Println("HomePage Endpoint Hit")
+    var wg sync.WaitGroup
+
+    for _, url := range urls {
+        wg.Add(1)
+        go fetch(url, &wg)
+    }
+
+    wg.Wait()
+    fmt.Println("Returning Response")
+    fmt.Fprintf(w, "Responses")
+}
+
+func handleRequests() {
+    http.HandleFunc("/", homePage)
+    log.Fatal(http.ListenAndServe(":8081", nil))
+}
+
+func main() {
+    handleRequests()
+}
