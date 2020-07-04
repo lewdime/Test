@@ -970,3 +970,344 @@ func main() {
 	fmt.Print(string(data))
 
 }
+
+
+
+package main	// Using Interface with inputs from console
+
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"os"
+)
+
+type Worker interface {
+	Work()
+	Salary()
+}
+
+type Person struct {
+	name       string
+	baseRate   int
+	totalHours int
+}
+
+func (p Person) Work() {
+	fmt.Println(p.name, "is working")
+}
+
+func (p *Person) Salary() {
+
+	fmt.Printf("Enter basic salary: ")
+	_, err := fmt.Scanf("%d", &p.baseRate)
+	if err != nil {
+		errors.New("NullPointerException")
+	}
+
+	fmt.Printf("Enter numnber of Hours: ")
+	_, err = fmt.Scanf("%d\n", &p.totalHours)
+	if err != nil {
+		errors.New("NullPointerException")
+	}
+
+	salary := p.baseRate * p.totalHours
+	fmt.Println("Salary of", p.name, "is", salary)
+
+}
+
+func describe(w Worker) {
+	fmt.Printf("Interface type %T\n value %v\n", w, w)
+}
+
+func main() {
+	p := Person{}
+	reader := bufio.NewReader(os.Stdin)
+
+	fmt.Print("Enter Name: ")
+	p.name, _ = reader.ReadString('\n')
+
+	var w Worker = &p
+	w.Work()
+	w.Salary()
+	describe(w)
+}
+
+
+
+
+package main	// Using bufio for buffering writting into resource or to file
+
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	// open file for write
+	f, e := os.OpenFile("buffertest.txt", os.O_WRONLY, 0666)
+	CheckError(e)
+
+	// create a buffered writer
+	// here we create a sized buffer of 4 bytes and the default is 4096 bytes
+	bw := bufio.NewWriterSize(f, 100)
+
+	// write to buffer
+	bw.Write([]byte("H"))
+	bw.Write([]byte("e"))
+	bw.Write([]byte("l"))
+	bw.Write([]byte("l"))
+	bw.Write([]byte("o"))
+	bw.Write([]byte(" "))
+	bw.Write([]byte("w"))
+	bw.Write([]byte("o"))
+	bw.Write([]byte("r"))
+	bw.Write([]byte("l"))
+	bw.Write([]byte("d"))
+
+	// check how much is inside waiting to be written
+	fmt.Println(bw.Buffered()) // 3
+
+	// check available space left
+	fmt.Println(bw.Available()) // 1
+
+	// To write all the contenst of the buffer to the opened file
+	bw.Flush()
+
+	// Reset the buffer
+	bw.Reset(f)
+
+	// To releas resource, we need to close the opened file
+	f.Close()
+}
+
+func CheckError(e error) {
+	if e != nil {
+		fmt.Println(e)
+	}
+}
+
+
+
+
+package main	// Reading buffer using bufio package
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+
+	// open file for reading
+	f, e := os.Open("buffertest.txt")
+	CheckError(e)
+
+	// create a buffered reader
+	br := bufio.NewReader(f)
+
+	// peek n bytes
+	// bbuf is a byte buffer of size 10
+	bbuf := make([]byte, 10)
+	bbuf, e = br.Peek(6)
+	CheckError(e)
+
+	// bbuf contents
+	fmt.Println(string(bbuf)) // Hello
+
+	// num read
+	nr, e := br.Read(bbuf)
+	CheckError(e)
+
+	fmt.Println("Num bytes read", nr) // 6
+
+	// read single byte
+	singleByte, e := br.ReadByte()
+
+	CheckError(e)
+
+	fmt.Println("Single byte is", string(singleByte)) // w
+
+	// reset buffer
+	br.Reset(f)
+}
+
+func CheckError(e error) {
+	if e != nil {
+		fmt.Println(e)
+	}
+}
+
+
+
+
+
+package main	// Using Encryption to encrypt text or content
+
+import (
+	"bufio"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
+	"os"
+)
+
+func main() {
+	// The generation of RSA keys is pretty simple. Here is the way it’s done.
+	// here 2048 is the number of bits for RSA, 1024 - 4096 supported
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	CheckError(err)
+
+	//	The public key can be obtained from the private key
+	publicKey := privateKey.PublicKey
+	// Using bufio package to read console for the Message to be encrypted
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter Secret Message : ")
+	msg, _ := reader.ReadString('\n')
+
+	// secretMessage := "This is super secret message!"
+	encryptedMessage := RSA_OAEP_Encrypt(msg, publicKey)
+	//	encrypt data
+	//	encryptedMessage := RSA_OAEP_Encrypt(secretMessage, publicKey)
+
+	fmt.Println("Cipher Text:", encryptedMessage)
+
+	RSA_OAEP_Decrypt(encryptedMessage, *privateKey)
+}
+
+func CheckError(e error) {
+	if e != nil {
+		fmt.Println(e.Error)
+	}
+}
+
+//	Now, just using the default encryption is not the standard.
+//	Hence, we use a padding algorithm like OAEP to make it more secure.
+//	Now, the function below encrypts plaintext to 2048-bit RSA
+
+func RSA_OAEP_Encrypt(secretMessage string, key rsa.PublicKey) string {
+	label := []byte("OAEP Encrypted")
+	rng := rand.Reader
+	// The encrypt function from RSA package uses a hash. Here we use sha256, which is very reliable.
+	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rng, &key, []byte(secretMessage), label)
+	CheckError(err)
+	return base64.StdEncoding.EncodeToString(ciphertext)
+}
+
+//	The function below decrypts the RSA encrypted message.
+//	It takes in the private key and returns a string.
+
+func RSA_OAEP_Decrypt(cipherText string, privKey rsa.PrivateKey) string {
+	ct, _ := base64.StdEncoding.DecodeString(cipherText)
+	label := []byte("OAEP Encrypted")
+	rng := rand.Reader
+	plaintext, err := rsa.DecryptOAEP(sha256.New(), rng, &privKey, ct, label)
+	CheckError(err)
+	fmt.Println("Plaintext:", string(plaintext))
+	return string(plaintext)
+}
+
+
+
+package main	// Using buffered channel with Goroutines with jobs and workers
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+)
+
+type Job struct {
+	id       int
+	randomno int
+}
+type Result struct {
+	job         Job
+	sumofdigits int
+}
+
+// creating a variable with type Job which is a struct type with capacity of 10
+var jobs = make(chan Job, 10)
+
+// creating a variable with type Result which is a struct type with capacity of 10
+var results = make(chan Result, 10)
+
+// function below will add the value of digits in a multi digit number like a random number
+// 532, will be added as 5+3+2 and return the sum
+func digits(number int) int {
+	sum := 0
+	no := number
+	for no != 0 {
+		digit := no % 10
+		sum += digit
+		no /= 10
+	}
+	// Un remark the code line below to simulate a run time process for digits func
+	// time.Sleep(100 * time.Millisecond)
+	return sum
+}
+func worker(wg *sync.WaitGroup) {
+	for job := range jobs {
+		output := Result{job, digits(job.randomno)}
+		results <- output
+	}
+	// line code below will tell the caller routine or func that this func is done
+	// and subtruct one unit value in the sync.WaitGroup of the calling function
+	// calling function should have a created sync.WaitGroup.Add(value int)
+	wg.Done()
+}
+func createWorkerPool(noOfWorkers int) {
+	var wg sync.WaitGroup
+	for i := 0; i < noOfWorkers; i++ {
+		// line below adds one unit value to the group
+		wg.Add(1)
+		go worker(&wg)
+	}
+	// line code below will wait for the wg.Done of worker func
+	wg.Wait()
+	// line below will clouse the result channel of type Result struct
+	close(results)
+}
+func allocate(noOfJobs int) {
+	for i := 0; i < noOfJobs; i++ {
+		// enlarge the value of randomo to get a diffetent time execution output
+		randomno := rand.Intn(999)
+		// Job struct type is copied to job variable
+		job := Job{i, randomno}
+		// job variable is sent to the jobs channel of type Job struc
+		jobs <- job
+	}
+	close(jobs)
+}
+func result(done chan bool) {
+	for result := range results {
+		fmt.Printf("Job id %d, input random no %d , sum of digits %d\n", result.job.id, result.job.randomno, result.sumofdigits)
+	}
+	done <- true
+}
+func main() {
+	startTime := time.Now()
+	// enlarge the value of noOfJobs to get a different time execution output
+	noOfJobs := 10
+	// allocate is called to add jobs to the jobs channel
+	go allocate(noOfJobs)
+	// done channel is created and passed to the result Goroutine so that it can start printing
+	// the output and notify once everything has been printed
+	done := make(chan bool)
+	go result(done)
+	// a pool of  worker Goroutines are created by the call to createWorkerPool function
+	// enlarge the value of noOfWorkers to get a diffetrent time execution output
+	noOfWorkers := 10
+	createWorkerPool(noOfWorkers)
+	// then main Goroutine waits on the done channel for all the results to tbe printed
+	<-done
+	endTime := time.Now()
+	diff := endTime.Sub(startTime)
+	fmt.Println("total time taken ", diff.Seconds(), "seconds")
+}
