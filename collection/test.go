@@ -1251,8 +1251,10 @@ func RSA_OAEP_Decrypt(cipherText string, privKey rsa.PrivateKey) string {
 package main	// Using buffered channel with Goroutines with jobs and workers
 
 import (
+	"bufio"
 	"fmt"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
 )
@@ -1272,8 +1274,24 @@ var jobs = make(chan Job, 10)
 // creating a variable with type Result which is a struct type with capacity of 10
 var results = make(chan Result, 10)
 
+// the func below takes the number of Jobs to be created as in put parameter
+// generates pseudo rando numbers with the max value set
+// creates Jobs struct using the random number and the for loop counter i as id
+func allocate(noOfJobs int) {
+	for i := 0; i < noOfJobs; i++ {
+		// enlarge the value of randomo to get a diffetent time execution output
+		randomno := rand.Intn(1000000)
+		// Job struct type is copied to job variable
+		job := Job{i, randomno}
+		// job variable is sent to the jobs channel of type Job struct
+		// jobs will be used in the worker function
+		jobs <- job
+	}
+	close(jobs)
+}
+
 // function below will add the value of digits in a multi digit number like a random number
-// 532, will be added as 5+3+2 and return the sum
+// 532, will be added as 5+3+2 and return the sum, and will be used by worker function
 func digits(number int) int {
 	sum := 0
 	no := number
@@ -1299,26 +1317,17 @@ func worker(wg *sync.WaitGroup) {
 func createWorkerPool(noOfWorkers int) {
 	var wg sync.WaitGroup
 	for i := 0; i < noOfWorkers; i++ {
-		// line below adds one unit value to the group
+		//	line below adds one unit value to the group
 		wg.Add(1)
 		go worker(&wg)
+
 	}
 	// line code below will wait for the wg.Done of worker func
 	wg.Wait()
 	// line below will clouse the result channel of type Result struct
 	close(results)
 }
-func allocate(noOfJobs int) {
-	for i := 0; i < noOfJobs; i++ {
-		// enlarge the value of randomo to get a diffetent time execution output
-		randomno := rand.Intn(999)
-		// Job struct type is copied to job variable
-		job := Job{i, randomno}
-		// job variable is sent to the jobs channel of type Job struc
-		jobs <- job
-	}
-	close(jobs)
-}
+
 func result(done chan bool) {
 	for result := range results {
 		fmt.Printf("Job id %d, input random no %d , sum of digits %d\n", result.job.id, result.job.randomno, result.sumofdigits)
@@ -1326,9 +1335,10 @@ func result(done chan bool) {
 	done <- true
 }
 func main() {
+
 	startTime := time.Now()
 	// enlarge the value of noOfJobs to get a different time execution output
-	noOfJobs := 10
+	noOfJobs := 99999
 	// allocate is called to add jobs to the jobs channel
 	go allocate(noOfJobs)
 	// done channel is created and passed to the result Goroutine so that it can start printing
@@ -1337,11 +1347,241 @@ func main() {
 	go result(done)
 	// a pool of  worker Goroutines are created by the call to createWorkerPool function
 	// enlarge the value of noOfWorkers to get a diffetrent time execution output
-	noOfWorkers := 10
+	noOfWorkers := 10000
 	createWorkerPool(noOfWorkers)
 	// then main Goroutine waits on the done channel for all the results to tbe printed
 	<-done
-	endTime := time.Now()
-	diff := endTime.Sub(startTime)
-	fmt.Println("total time taken ", diff.Seconds(), "seconds")
+	//	endTime := time.Now()
+	//	diff := endTime.Sub(startTime).Seconds()
+
+	// Create a file and use os.OpenFile if file exist then append to it if not then create it
+	f, err := os.OpenFile("mydata.file", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+	//	close file before main routine exits using defer
+	defer f.Close()
+	//	assign variable w as where to write buffer to file f
+	w := bufio.NewWriter(f)
+	//	write to buffer
+
+	fmt.Fprintf(w, "Total time taken %.8f seconds; Number of Jobs %d; Number of Workers %d\n", time.Since(startTime).Seconds(), noOfJobs, noOfWorkers)
+	//	fmt.Fprintf(w, "Total time taken %.8f seconds; Number of Jobs %d; Number of Workers %d\n", diff, noOfJobs, noOfWorkers)
+
+	// write whole chunk of buffer to file
+	w.Flush()
+
+	fmt.Println("Total time taken", time.Since(startTime).Seconds(), "seconds")
+	//	fmt.Println("total time taken ", diff, "seconds")
+
+}
+
+
+
+package main	// Get public ip using url response
+
+import (
+	"fmt"
+	"io/ioutil"
+	"net/http"
+)
+
+func main() {
+	// we are using a pulib IP API, we're using ipify here, below are some others
+	urls := []string{"https://api.ipify.org",
+		"http://myexternalip.com/raw",
+		"http://ident.me"}
+	// "http://whatismyipaddress.com/api"
+
+	for _, e := range urls {
+		fmt.Println("Getting IP address from", e)
+		resp, err := http.Get(e)
+		if err != nil {
+			panic(err)
+		}
+
+		defer resp.Body.Close()
+
+		ip, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("My IP is:\n%s\n", ip)
+
+	}
+}
+
+
+
+package main	// Retrive Local and Remote IP Address
+
+import (
+	"fmt"
+	"net"
+)
+
+func main() {
+	conn, error := net.Dial("udp", "8.8.8.8:80")
+	if error != nil {
+		fmt.Println(error)
+
+	}
+
+	defer conn.Close()
+	localipAddress := conn.LocalAddr().String()
+	remoteipAddress := conn.RemoteAddr().String()
+	fmt.Println("My local address:\t", localipAddress, "\nand Remote address is:\t", remoteipAddress)
+}
+
+
+package main	//	Creating class like objects using structs
+
+import "Test/employee"
+
+func main() {
+	e := employee.New("Sam", "Adolf", 30, 20)
+	e.LeavesRemaining()
+}
+ 
+
+
+
+package main	// Composition Instead of Inheritance - OOP in go
+				// Embedding slice of strucs
+
+import (
+	"fmt"
+)
+
+//	this stuct will be used to embed into another stuct
+type author struct {
+	firstName string
+	lastName  string
+	bio       string
+}
+
+//	creating pivate method in author struct to print first and last name
+func (a author) fullName() string {
+	return fmt.Sprintf("%s %s", a.firstName, a.lastName)
+}
+
+//	there is an anonymous field with type author in the struct below
+type post struct {
+	title   string
+	content string
+	author
+}
+
+// creating private method inside the post struct that prints out the details
+func (p post) details() {
+	fmt.Println("Title: ", p.title)
+	fmt.Println("Content: ", p.content)
+	//	Go gives us the option to access the embedded fields as if they were part of the outer struct
+	//	instead of using p.author.fullName and p.author.bio, we can use replacement below
+	fmt.Println("Author: ", p.fullName())
+	fmt.Println("Bio: ", p.bio)
+}
+
+type website struct {
+	//	fieldname posts is assigned slices of post
+	posts []post
+}
+
+func (w website) contents() {
+	fmt.Println("Contents of Website")
+	for _, v := range w.posts {
+		v.details()
+		fmt.Println()
+	}
+}
+
+func main() {
+	author1 := author{
+		"Naveen",
+		"Ramanathan",
+		"Golang Enthusiast",
+	}
+	post1 := post{
+		"Inheritance in Go",
+		"Go supports composition instead of inheritance",
+		author1,
+	}
+	post2 := post{
+		"Struct instead of Classes in Go",
+		"Go does not support classes but methods can be added to structs",
+		author1,
+	}
+	post3 := post{
+		"Concurrency",
+		"Go is a concurrent language and not a parallel one",
+		author1,
+	}
+	w := website{
+		posts: []post{post1, post2, post3},
+	}
+	w.contents()
+}
+
+
+
+package main	// Polymorphism -- OOP in Go using Interface and structs
+
+import (
+	"fmt"
+)
+
+type Income interface {
+	calculate() int
+	source() string
+}
+
+type FixedBilling struct {
+	projectName  string
+	biddedAmount int
+}
+
+type TimeAndMaterial struct {
+	projectName string
+	noOfHours   int
+	hourlyRate  int
+}
+
+//	create calculate method in Fixedbilling struct that returns biddedAmount field
+func (fb FixedBilling) calculate() int {
+	return fb.biddedAmount
+}
+
+//	create source method in Fixedbilling struct that returns source of income in projectName field
+func (fb FixedBilling) source() string {
+	return fb.projectName
+}
+
+//	created calculate method in TimeAndMaterial struct that calculate the and returns income
+func (tm TimeAndMaterial) calculate() int {
+	return tm.noOfHours * tm.hourlyRate
+}
+
+//	created source method in TimeAndMaterial struct that returns source of income in projectName field
+func (tm TimeAndMaterial) source() string {
+	return tm.projectName
+}
+
+// create a function that calculates and returns the total income from slices of Income parameter argument
+func calculateNetIncome(ic []Income) {
+	var netincome int = 0
+	for _, income := range ic {
+		fmt.Printf("Income From %s = $%d\n", income.source(), income.calculate())
+		netincome += income.calculate()
+	}
+	fmt.Printf("Net income of organisation = $%d\n", netincome)
+}
+
+func main() {
+	project1 := FixedBilling{projectName: "Project 1", biddedAmount: 5000}
+	project2 := FixedBilling{projectName: "Project 2", biddedAmount: 10000}
+	project3 := TimeAndMaterial{projectName: "Project 3", noOfHours: 160, hourlyRate: 25}
+	//	manually creating series of records of Income interfaces in from different struct type records
+	incomeStreams := []Income{project1, project2, project3}
+	calculateNetIncome(incomeStreams)
 }
