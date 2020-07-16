@@ -1531,44 +1531,44 @@ import (
 	"fmt"
 )
 
-type Income interface {
+type income interface {
 	calculate() int
 	source() string
 }
 
-type FixedBilling struct {
+type fixedBilling struct {
 	projectName  string
 	biddedAmount int
 }
 
-type TimeAndMaterial struct {
+type timeAndMaterial struct {
 	projectName string
 	noOfHours   int
 	hourlyRate  int
 }
 
 //	create calculate method in Fixedbilling struct that returns biddedAmount field
-func (fb FixedBilling) calculate() int {
+func (fb fixedBilling) calculate() int {
 	return fb.biddedAmount
 }
 
 //	create source method in Fixedbilling struct that returns source of income in projectName field
-func (fb FixedBilling) source() string {
+func (fb fixedBilling) source() string {
 	return fb.projectName
 }
 
 //	created calculate method in TimeAndMaterial struct that calculate the and returns income
-func (tm TimeAndMaterial) calculate() int {
+func (tm timeAndMaterial) calculate() int {
 	return tm.noOfHours * tm.hourlyRate
 }
 
 //	created source method in TimeAndMaterial struct that returns source of income in projectName field
-func (tm TimeAndMaterial) source() string {
+func (tm timeAndMaterial) source() string {
 	return tm.projectName
 }
 
 // create a function that calculates and returns the total income from slices of Income parameter argument
-func calculateNetIncome(ic []Income) {
+func calculateNetIncome(ic []income) {
 	var netincome int = 0
 	for _, income := range ic {
 		fmt.Printf("Income From %s = $%d\n", income.source(), income.calculate())
@@ -1578,10 +1578,62 @@ func calculateNetIncome(ic []Income) {
 }
 
 func main() {
-	project1 := FixedBilling{projectName: "Project 1", biddedAmount: 5000}
-	project2 := FixedBilling{projectName: "Project 2", biddedAmount: 10000}
-	project3 := TimeAndMaterial{projectName: "Project 3", noOfHours: 160, hourlyRate: 25}
+	project1 := fixedBilling{projectName: "Project 1", biddedAmount: 5000}
+	project2 := fixedBilling{projectName: "Project 2", biddedAmount: 10000}
+	project3 := timeAndMaterial{projectName: "Project 3", noOfHours: 160, hourlyRate: 25}
 	//	manually creating series of records of Income interfaces in from different struct type records
-	incomeStreams := []Income{project1, project2, project3}
+	incomeStreams := []income{project1, project2, project3}
 	calculateNetIncome(incomeStreams)
+}
+
+
+
+
+package main	// Using defer
+
+import (
+	"fmt"
+	"os"
+	"sync"
+)
+
+type rect struct {
+	length int
+	width  int
+}
+
+func (r rect) area(wg *sync.WaitGroup) {
+	//	defer is called before this fuction has finished executing
+	defer wg.Done()
+	if r.length < 0 {
+		fmt.Printf("rect %v's length should be greater than zero\n", r)
+		// if defer above was not stated, then wg.Done below should
+		// wg.Done()
+		return
+
+	}
+	if r.width < 0 {
+		fmt.Printf("rect %v's width should be greater than zero\n", r)
+		// if defer above was not stated, then wg.Done below should
+		// wg.Done()
+		return
+	}
+	area := r.length * r.width
+	fmt.Printf("rect %v's area %d\n", r, area)
+	// if defer above was not stated, then wg.Done below should
+	// wg.Done()
+}
+
+func main() {
+	var wg sync.WaitGroup
+	r1 := rect{-67, 89}
+	r2 := rect{5, -67}
+	r3 := rect{8, 9}
+	rects := []rect{r1, r2, r3}
+	for _, v := range rects {
+		wg.Add(1)
+		go v.area(&wg)
+	}
+	wg.Wait()
+	fmt.Println("All go routines finished executing")
 }

@@ -7,19 +7,18 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"time"
 )
 
 func main() {
 
 	//open a file for read only
 	fh1, err := os.Open("test1.txt")
-	PrintFatalError(err)
+	printFatalError(err)
 	defer fh1.Close()
 
 	//Create a new file
 	fh2, err := os.Create("test2.txt")
-	PrintFatalError(err)
+	printFatalError(err)
 	defer fh2.Close()
 
 	//open file fro read write
@@ -35,7 +34,7 @@ func main() {
 
 	// 0666 => Owner: (read &write), Group: (read & write), and other (read & write)
 
-	PrintFatalError(err)
+	printFatalError(err)
 	defer fh3.Close()
 
 	//rename a file
@@ -44,14 +43,14 @@ func main() {
 
 	//move a file
 	err = os.Rename("./test1.txt", "./testfolder/test1.txt")
-	PrintFatalError(err)
+	printFatalError(err)
 
 	//copy a file
-	CopyFile("test3.txt", "./testfolder/test3.txt")
+	copyFile("test3.txt", "./testfolder/test3.txt")
 
 	//delte a file
 	err = os.Remove("test2.txt")
-	PrintFatalError(err)
+	printFatalError(err)
 
 	bytes, err := ioutil.ReadFile("test3.txt")
 	fmt.Println(string(bytes))
@@ -70,50 +69,43 @@ func main() {
 	}
 	writebuffer.Flush()
 
-	GenerateFileStatusReport("test3.txt")
-
-	filestat1, err := os.Stat("test3.txt")
-	PrintFatalError(err)
-	for {
-		time.Sleep(1 * time.Second)
-		filestat2, err := os.Stat("test3.txt")
-		PrintFatalError(err)
-	}
+	generateFileStatusReport("test3.txt")
 
 }
 
-func PrintFatalError(err error) {
+func printFatalError(err error) {
 	if err != nil {
 		log.Fatal("Error happened while processing file", err)
 	}
 }
 
 //Copy file fname1 to fname2
-func CopyFile(fname1, fname2 string) {
+
+func copyFile(fname1, fname2 string) {
 	fOld, err := os.Open(fname2)
-	PrintFatalError(err)
+	printFatalError(err)
 	defer fOld.Close()
 
 	fNew, err := os.Create(fname2)
-	PrintFatalError(err)
+	printFatalError(err)
 	defer fNew.Close()
 
 	//copy bytes from source to destination
 
 	_, err = io.Copy(fNew, fOld)
-	PrintFatalError(err)
+	printFatalError(err)
 
 	//flush file contents to desc
 	err = fNew.Sync()
-	PrintFatalError(err)
+	printFatalError(err)
 
 }
 
-func GenerateFileStatusReport(fname string) {
+func generateFileStatusReport(fname string) {
 	// Stat returns file info. It will return
 	// and error if there is no file
 	filestats, err := os.Stat(fname)
-	PrintFatalError(err)
+	printFatalError(err)
 
 	fmt.Println("What's the file name?", filestats.Name())
 	fmt.Println("Am i a directory?", filestats.IsDir())
